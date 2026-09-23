@@ -105,20 +105,31 @@ clearBtn.onclick=()=>{items=[];list.innerHTML='';msg.textContent='';refresh()};
 
 async function load(){
   if(ff)return;
+  if(typeof FFmpegWASM==='undefined'||typeof FFmpegUtil==='undefined')
+    throw new Error('The converter scripts did not load (blocked or offline).');
   const {FFmpeg}=FFmpegWASM,{toBlobURL}=FFmpegUtil;
-  const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
-  const wbase='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd';
-  const f=new FFmpeg();
-  f.on('progress',({progress})=>{
-    if(current&&progress>=0)current.bar.style.width=Math.min(100,Math.round(progress*100))+'%';
-    if(current&&progress>=0)setSt(current,'Converting '+Math.min(100,Math.round(progress*100))+'%');
-  });
-  await f.load({
-    coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),
-    wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm'),
-    classWorkerURL:await toBlobURL(wbase+'/814.ffmpeg.js','text/javascript')
-  });
-  ff=f;
+  const hosts=['https://cdn.jsdelivr.net/npm','https://unpkg.com'];
+  let lastErr;
+  for(const h of hosts){
+    try{
+      const base=h+'/@ffmpeg/core@0.12.6/dist/umd';
+      const wbase=h+'/@ffmpeg/ffmpeg@0.12.10/dist/umd';
+      const f=new FFmpeg();
+      f.on('progress',({progress})=>{
+        if(current&&progress>=0){
+          const p=Math.min(100,Math.round(progress*100));
+          current.bar.style.width=p+'%';setSt(current,'Converting '+p+'%');
+        }
+      });
+      await f.load({
+        coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),
+        wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm'),
+        classWorkerURL:await toBlobURL(wbase+'/814.ffmpeg.js','text/javascript')
+      });
+      ff=f;return;
+    }catch(e){lastErr=e;console.error('Load failed from '+h,e)}
+  }
+  throw lastErr;
 }
 
 convertBtn.onclick=async()=>{
@@ -128,7 +139,7 @@ convertBtn.onclick=async()=>{
     await load();
     msg.textContent='';
   }catch(e){
-    msg.textContent='The converter could not load. Check your connection and try again.';
+    msg.textContent='The converter could not load: '+((e&&e.message)||e)+' Check your connection and try again.';
     busy=false;refresh();return;
   }
   for(const it of items){
