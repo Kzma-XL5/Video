@@ -47,7 +47,7 @@ li.busy .bar{display:block}
 
   <label class="drop" id="drop">
     <p>Choose one or more .MTS files</p>
-    <input id="pick" type="file" multiple accept=".mts,.MTS,.m2ts" hidden>
+    <input id="pick" type="file" multiple hidden>
     <button type="button" class="primary" id="chooseBtn">Choose videos</button>
   </label>
 
@@ -81,8 +81,9 @@ const outName=n=>n.replace(/\.[^.]*$/,'')+'.mp4';
 
 function add(files){
   if(busy)return;
+  let skipped=0;
   for(const f of files){
-    if(!/\.(mts|m2ts)$/i.test(f.name))continue;
+    if(!/\.(mts|m2ts)$/i.test(f.name)){skipped++;continue}
     const li=document.createElement('li');
     li.innerHTML='<div class="row"><span class="name"></span><span class="st"></span></div><div class="bar"><i></i></div>';
     li.querySelector('.name').textContent=f.name+' ('+fmt(f.size)+')';
@@ -90,6 +91,7 @@ function add(files){
     items.push({file:f,li,st:li.querySelector('.st'),bar:li.querySelector('i'),data:null});
     setSt(items[items.length-1],'Waiting');
   }
+  msg.textContent=skipped?skipped+' file'+(skipped>1?'s were':' was')+' skipped because it is not an .MTS file.':'';
   refresh();
 }
 function setSt(it,t,cls){it.st.textContent=t;it.st.className='st '+(cls||'')}
