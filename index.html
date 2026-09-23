@@ -99,7 +99,9 @@ function refresh(){
   convertBtn.hidden=!pending;
   convertBtn.disabled=busy;
   clearBtn.disabled=busy;
-  dlBtn.hidden=!items.some(i=>i.data);
+  const done=items.filter(i=>i.data).length;
+  dlBtn.hidden=!done;
+  dlBtn.textContent=done===1?'Download video':'Download all (.zip)';
 }
 clearBtn.onclick=()=>{items=[];list.innerHTML='';msg.textContent='';refresh()};
 
@@ -161,7 +163,7 @@ convertBtn.onclick=async()=>{
   }
   current=null;busy=false;refresh();
   const n=items.filter(i=>i.data).length;
-  msg.textContent=n?n+' of '+items.length+' converted. Tap Download all to save them.':'';
+  msg.textContent=n?n+' of '+items.length+' converted. Tap the download button to save '+(n===1?'it':'them')+'.':'';
 };
 
 dlBtn.onclick=()=>{
@@ -172,8 +174,10 @@ dlBtn.onclick=()=>{
     while(used.has(n.toLowerCase()))n=outName(it.file.name).replace(/\.mp4$/,' ('+(k++)+').mp4');
     used.add(n.toLowerCase());out.push({name:n,data:it.data});
   }
-  const url=URL.createObjectURL(zip(out));
-  const a=document.createElement('a');a.href=url;a.download='converted-videos.zip';
+  const single=out.length===1;
+  const blob=single?new Blob([out[0].data],{type:'video/mp4'}):zip(out);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=single?out[0].name:'converted-videos.zip';
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 };
