@@ -112,7 +112,7 @@ async function load(){
   let lastErr;
   for(const h of hosts){
     try{
-      const base=h+'/@ffmpeg/core@0.12.6/dist/umd';
+      const base=h+'/@ffmpeg/core@0.12.6/dist/esm';
       const wbase=h+'/@ffmpeg/ffmpeg@0.12.10/dist/umd';
       const f=new FFmpeg();
       f.on('progress',({progress})=>{
